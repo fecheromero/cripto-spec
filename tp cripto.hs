@@ -1,6 +1,7 @@
-{-# LANGUAGE FlexibleContexts #-}
+
 import Data.Bits
 import Numeric
+import Data.Maybe (listToMaybe,fromJust)
 import Data.Char
 import Data.Text.Encoding
 import Data.Text(pack)
@@ -12,11 +13,13 @@ import Data.Text(pack)
 intToBit aInt = showIntAtBase 2 intToDigit aInt ""
 
 stringToArrayOfInt aStringBit = map digitToInt aStringBit
+readBin :: Integral a => String ->  a
+readBin = fromJust.fmap fst . listToMaybe . readInt 2 (`elem` "01") digitToInt
 
---bitToInt:: (Integral a) => String->a 
-bitToInt aBit 
-			| length aBit >1 = fromIntegral ((head $ stringToArrayOfInt aBit)  * 2^(length aBit-1) + bitToInt  (tail aBit))
-			| otherwise = fromIntegral (head $ stringToArrayOfInt aBit )
+bitToInt:: (Integral a) => String->a 
+bitToInt = readBin
+			--| length aBit >1 = fromIntegral ((head $ stringToArrayOfInt aBit)  * 2^(length aBit-1) + bitToInt  (tail aBit))
+			--| otherwise = fromIntegral (head $ stringToArrayOfInt aBit )
 
 completeBits stringBits cant
 	|length stringBits<cant= (head (reverse (take (cant+1-(length stringBits)) (iterate (++"0") "")))) ++ stringBits
@@ -25,6 +28,7 @@ completeBits stringBits cant
 completeByte stringAscii= completeBits stringAscii 8
 
 stringToAsciiChain aString=foldl1 (++) (map (completeByte.intToBit.ord) aString)
+stringToNumber:: (Integral a)=> String->a
 stringToNumber aString= bitToInt (stringToAsciiChain aString)
 
 arrayRotate :: Int -> [a] -> [a]
@@ -36,15 +40,16 @@ arrayRotate n xs
 bitRotate rotation number size=  bitToInt (arrayRotate rotation (completeBits (intToBit number) size))
 
 
-additionModule value1 value2 moduleValue= mod (value1+value2) moduleValue --((value1+value2)!1) moduleValue
 
-additionSpec value1 value2 =additionModule  value1  value2  (2^96)
+additionModule value1 value2 moduleValue= mod (value1 + value2) moduleValue
 
-roundSpecBlock (lBlock, rBlock) key =((xor (additionSpec (bitRotate 8 lBlock 96) rBlock) key) ,xor (xor (additionSpec (bitRotate 8 lBlock 96) rBlock) key) (bitRotate (-3) rBlock 96))
+additionSpec value1 value2 = additionModule value1  value2  (2^96)
+
+roundSpecBlock (lBlock, rBlock) key =((xor (additionSpec  (bitRotate 8 lBlock 96) rBlock) key) ,xor (xor (additionSpec  (bitRotate 8 lBlock 96) rBlock) key)  (bitRotate (-3) rBlock 96))
 
 keyScheduleRound (lKey,rKey) numberOfRound
-				|numberOfRound==0 =((xor (additionSpec  (bitRotate 8 lKey 96) rKey) numberOfRound),rKey)
-				|otherwise =((xor (additionSpec  (bitRotate 8 lKey 96) rKey) numberOfRound),xor (xor (additionSpec  (bitRotate 8 lKey 96) rKey) numberOfRound) (bitRotate (-3) rKey 96))
+				|numberOfRound==0 =(xor (additionSpec  (bitRotate 8 lKey 96) rKey) numberOfRound,rKey)
+				|otherwise =(xor (additionSpec  (bitRotate 8 lKey 96) rKey) numberOfRound,xor (xor (additionSpec  (bitRotate 8 lKey 96) rKey) numberOfRound)  	(bitRotate (-3) rKey 96))
 
 keyRecursiveRound (lKey,rKey) numberOfRounds=foldl keyScheduleRound (lKey,rKey) [0..numberOfRounds]
 
