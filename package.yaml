@@ -1,0 +1,22 @@
+name: crypto
+
+dependencies:
+  - base
+  - text
+
+library:
+  source-dirs: src
+
+executable:
+  main: Main.hs
+  source-dirs: app
+  dependencies:
+    - crypto
+
+tests:
+  spec:
+    main: Spec.hs
+    source-dirs:
+      - test
+    dependencies:
+      - crypto
