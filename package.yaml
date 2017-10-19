@@ -3,6 +3,8 @@ name: crypto
 dependencies:
   - base
   - text
+  - vector
+  # - criterion
 
 library:
   source-dirs: src
