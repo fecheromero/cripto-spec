@@ -9,11 +9,6 @@ dependencies:
 library:
   source-dirs: src
 
-executable:
-  main: Main.hs
-  source-dirs: app
-  dependencies:
-    - crypto
 
 tests:
   spec:
@@ -22,3 +17,11 @@ tests:
       - test
     dependencies:
       - crypto
+
+
+executables:
+ cripto-exe:
+   main: Main.hs
+   source-dirs: app
+   dependencies:
+     - crypto
