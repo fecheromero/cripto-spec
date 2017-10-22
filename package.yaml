@@ -5,6 +5,8 @@ dependencies:
   - text
   - vector
   # - criterion
+  - QuickCheck 
+  - JuicyPixels
 
 library:
   source-dirs: src
@@ -20,7 +22,7 @@ tests:
 
 
 executables:
- cripto-exe:
+ crypto-exe:
    main: Main.hs
    source-dirs: app
    dependencies:

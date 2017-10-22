@@ -1,12 +1,16 @@
 module Crypto3 where
 
+import Data.Either
+import System.IO
+import Codec.Picture
 import Data.Bits
 import Numeric
 import qualified Data.Vector as V
 import Data.Word
 import Data.Maybe (listToMaybe,fromJust)
 import Data.Char
-
+import Test.QuickCheck
+import Control.Monad
 
 intToBit aInt = showIntAtBase 2 intToDigit aInt ""
 
@@ -35,6 +39,7 @@ stringHexToBit string = foldl (++) "" (map (completeBits 4.intToBit) (map digitT
 
 stringHexToNumeric string = bitToInt (stringHexToBit string)
 
+numericToHex aInt= showIntAtBase 16 intToDigit aInt ""
 
 ----------------------------------------------------------------
 additionSpec :: Word16 -> Word16 -> Word16
@@ -43,14 +48,7 @@ substraccionSpeck :: Word16 -> Word16 -> Word16
 substraccionSpeck aWord anotherWord = aWord - anotherWord
 
 rotate16 :: Int -> Word16 -> Word16
--- rotate16 anAmount aWord = (rotate aWord . negate) anAmount
 rotate16 anAmount aWord = rotateR aWord anAmount
-
-rotate8ToRight :: Word16 -> Word16
-rotate8ToRight w = rotateR w 8
-
-rotate3ToLeft :: Word16 -> Word16
-rotate3ToLeft w = rotateL w 3
 
 l :: V.Vector Word16 -> Word16 -> Word16
 l keys t
@@ -62,7 +60,7 @@ l keys t
 k :: V.Vector Word16 -> Word16 -> Word16
 k keys t
   |t == 0 = keys `V.unsafeIndex` (fromIntegral . toInteger) (m - 1)
-  |otherwise = rotate3ToLeft (k keys i) `xor` l keys (i + m - 1)
+  |otherwise = rotate16 (-3) (k keys i) `xor` l keys (i + m - 1)
   where i = t - 1
         m = amountOfWordsForKey
 
@@ -76,3 +74,25 @@ speckEncript (lBlock,rBlock) keys rounds = foldl (\(lBlock,rBlock) round -> spec
 speckDecriptRound (lBlock, rBlock) key = (rotate16 (-8) (substraccionSpeck (xor lBlock key) (rotate16 3 (xor lBlock rBlock))),rotate16 3 (xor lBlock rBlock))
 
 speckDecript (lBlock,rBlock) keys rounds = foldl (\(lBlock,rBlock) round -> speckDecriptRound (lBlock,rBlock) (k keys round)) (lBlock,rBlock)  (reverse [0..rounds])
+
+
+---------------------------------------------------------------
+data Palabra16 = Palabra16 Word16 deriving Show
+value (Palabra16 value)= value
+
+instance Arbitrary Palabra16  where
+  arbitrary  = Palabra16 `liftM` choose (40000, 65535)
+
+keyVector=(V.fromList [stringHexToNumeric "1918",stringHexToNumeric "1110",stringHexToNumeric "0908", stringHexToNumeric "0100"])
+
+speckPrueba:: (Palabra16,Palabra16)->Bool
+speckPrueba (l,b) = (l1,b1)==(speckDecript (speckEncript (l1,b1) keyVector 5) keyVector 5)  
+              where l1=rotate16 0 (value l)
+                    b1=rotate16 0 (value b)
+
+mapTuple :: (a -> b) -> (a, a) -> (b, b)
+mapTuple f (a1, a2) = (f a1, f a2)
+
+speckHexaPrueba (hex1,hex2) keys rounds = mapTuple numericToHex (speckDecript (speckEncript (stringHexToNumeric hex1, stringHexToNumeric hex2) (V.fromList (map stringHexToNumeric keys)) rounds) (V.fromList (map stringHexToNumeric keys)) rounds) 
+
+--main =  quickCheck speckPrueba
