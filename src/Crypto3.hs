@@ -41,6 +41,9 @@ stringHexToNumeric string = bitToInt (stringHexToBit string)
 
 numericToHex aInt= showIntAtBase 16 intToDigit aInt ""
 
+mapTuple :: (a -> b) -> (a, a) -> (b, b)
+mapTuple f (a1, a2) = (f a1, f a2)
+
 ----------------------------------------------------------------
 additionSpec :: Word16 -> Word16 -> Word16
 additionSpec aWord anotherWord = aWord + anotherWord
@@ -90,9 +93,36 @@ speckPrueba (l,b) = (l1,b1)==(speckDecript (speckEncript (l1,b1) keyVector 5) ke
               where l1=rotate16 0 (value l)
                     b1=rotate16 0 (value b)
 
-mapTuple :: (a -> b) -> (a, a) -> (b, b)
-mapTuple f (a1, a2) = (f a1, f a2)
+
 
 speckHexaPrueba (hex1,hex2) keys rounds = mapTuple numericToHex (speckDecript (speckEncript (stringHexToNumeric hex1, stringHexToNumeric hex2) (V.fromList (map stringHexToNumeric keys)) rounds) (V.fromList (map stringHexToNumeric keys)) rounds) 
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+word8To16:: Word8 ->Word16
+word8To16  word1 = fromInteger (toInteger word1)
+
+word8PairTo16Word word1 word2= (rotate16 (-8) (word8To16 word1)) + (word8To16 word2)
+
+word16To8:: Word16 ->Word8
+word16To8  word1 = fromInteger (mod (toInteger word1) 256)
+
+word16ToPair8 :: Word16-> (Word8,Word8)
+word16ToPair8 word1= (word16To8 (rotateR (word1 - (mod word1 256)) 8),word16To8 word1)
+
+arrayOfWord8ToArrayOfWord16 :: [Word8]-> [Word16]
+arrayOfWord8ToArrayOfWord16 (x1 : xs)
+  |(length (x1  : xs)) >=2 = (word8PairTo16Word x1 (head xs)) : (arrayOfWord8ToArrayOfWord16 (tail xs))
+  | otherwise =  (word8PairTo16Word x1 0) : (arrayOfWord8ToArrayOfWord16 (tail xs))
+
+arrayOfWord8ToArrayOfWord16 []=[]
+
+arrayOfWordToArrayOfTupla (x1:x2)
+   | length (x1:x2)>=2 = (x1,(head x2)) : arrayOfWordToArrayOfTupla (tail x2)
+   | otherwise =[(x1,0)]
+arrayOfWordToArrayOfTupla [] = []
+
+encryptImg arrayOfWord8 keys rounds = map (\tupla -> speckEncript tupla (V.fromList keys) rounds) ((arrayOfWordToArrayOfTupla.arrayOfWord8ToArrayOfWord16) arrayOfWord8)
+
 
 --main =  quickCheck speckPrueba
