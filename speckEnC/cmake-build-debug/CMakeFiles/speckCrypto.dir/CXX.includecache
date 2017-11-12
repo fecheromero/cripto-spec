@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/feche/CLionProjects/speckCrypto/main.cpp
+/home/feche/Facu/cripto/speckEnC/main.cpp
 iostream
 -
 climits

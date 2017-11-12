@@ -86,7 +86,7 @@ block roundFunction(block aBlock, word key) {
 block decriptRoundFunction(block aBlock, word key) {
     block newBlock;
     newBlock.word2=(aBlock.word1 | aBlock.word2) >> CONFIG.beta;
-    newBlock.word1=((aBlock.word1 | key) << CONFIG.alfa) - newBlock.word2;
+    newBlock.word1=((aBlock.word1 | key) - newBlock.word2 ) << CONFIG.alfa  ;
     return newBlock;
 };
 
@@ -127,20 +127,21 @@ int main() {
     word* keys=(word*) malloc(CONFIG.rounds*2);
     word* keysSelected=(word*) malloc(CONFIG.keyWordsAmount*2);
     word word1,word2,word3,word4;
-    word1.value=0x1918;
-    word2.value=0x1110;
-    word3.value=0x0908;
-    word4.value=0x0100;
+    word4.value=0x1918;
+    word3.value=0x1110;
+    word2.value=0x0908;
+    word1.value=0x0100;
     keysSelected[0]=word1;
     keysSelected[1]=word2;
     keysSelected[2]=word3;
     keysSelected[3]=word4;
     keyComplete(keysSelected,keys);
     block aBlock;
-    aBlock.word1.value=0x6574;
-    aBlock.word2.value=0x694c;
+    aBlock.word2.value=0x6574;
+    aBlock.word1.value=0x694c;
 
-    std::cout << (speckDecript(speckEncript(aBlock,keys),keys)).word1.value << std::endl;
+   // std::cout << (speckDecript(speckEncript(aBlock,keys),keys)).word1.value << std::endl;
+    std::cout << (speckEncript(aBlock,keys)).word1.value << std::endl;
     printf("43122");
 
     free(keys);
