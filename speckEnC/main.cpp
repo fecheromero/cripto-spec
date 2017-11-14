@@ -117,9 +117,6 @@ void keyComplete(word* keyWords,word* keys){
         l[i+CONFIG.keyWordsAmount-1]=(keys[i] +(l[i] >> CONFIG.alfa) | i);
         keys[i+1]= (keys[i] << CONFIG.beta) | l[i+CONFIG.keyWordsAmount-1];
     }
-    word newWord;
-    newWord.value=0xFFFF-1;
-    keys[CONFIG.rounds]=newWord;
 }
 int fileSize(FILE* bmpFile){
     fseek(bmpFile, 0, SEEK_END);
@@ -128,16 +125,15 @@ int fileSize(FILE* bmpFile){
     return size;
 }
 
-int bmpDataSize(FILE* bmpFile){
+unsigned bmpDataSize(FILE* bmpFile){
+    fflush(bmpFile);
     fseek(bmpFile, 0, SEEK_END);
-    int size = ftell(bmpFile);
+    unsigned size = ftell(bmpFile);
     fseek(bmpFile,0,SEEK_SET);
     return size-54;
 }
 void loadBMPContain(uint16_t * header,uint16_t * data,FILE* bmpFile){
-    //int size=bmpDataSize(bmpFile);
-    // fread(header,2,27,bmpFile);
-    int size=fileSize(bmpFile);
+    unsigned size= fileSize(bmpFile);
     fread(header,1,54,bmpFile);
     fread(data,1,size,bmpFile);
 }
@@ -166,8 +162,8 @@ void decipherBMPContain(uint16_t*  decipherText,uint16_t * contain,word* keys,in
 int main() {
     obtainConfig(16,64);
     CONFIG=CONFIGS[0];
-    word* keys=(word*) malloc(CONFIG.rounds*2);
-    word* keysSelected=(word*) malloc(CONFIG.keyWordsAmount*2);
+    word* keys=(word*) calloc(CONFIG.rounds,CONFIG.wordSize/8);
+    word* keysSelected=(word*) calloc(CONFIG.keyWordsAmount,CONFIG.wordSize/8);
     word word1,word2,word3,word4;
     word4.value=0x1918;
     word3.value=0x1110;
@@ -178,32 +174,31 @@ int main() {
     keysSelected[2]=word3;
     keysSelected[3]=word4;
     keyComplete(keysSelected,keys);
-    block aBlock;
-    aBlock.word2.value=0x6574;
-    aBlock.word1.value=0x694c;
+
     FILE* img;
     img=fopen("descarga.bmp","r");
 
-    uint16_t * header=(uint16_t *)malloc(54);
-    int dataSize=bmpDataSize(img);
-    uint16_t * plainText=(uint16_t*) malloc(fileSize(img));
+    uint16_t * header=(uint16_t *)calloc(54,1);
+    int dataSize=fileSize(img);
+    uint16_t * plainText=(uint16_t*) calloc(dataSize,1);
     loadBMPContain(header,plainText,img);
 
-    uint16_t * cipherText=(uint16_t*) malloc(fileSize(img));
+    uint16_t * cipherText=(uint16_t*) calloc(dataSize,1);
 
     memcpy(cipherText,header,54);
-    cipherBMPContain((cipherText+27),plainText,keys,dataSize);
-    uint16_t * decipherText=(uint16_t*) malloc(fileSize(img));
-    memcpy(decipherText,header,54);
+    cipherBMPContain((cipherText+27),plainText,keys,bmpDataSize(img));
 
-    decipherBMPContain((decipherText+27),(cipherText+27),keys,dataSize);
+    uint16_t * decipherText=(uint16_t*) calloc(dataSize,1);
+
+    memcpy(decipherText,header,54);
+    decipherBMPContain((decipherText+27),(cipherText+27),keys,bmpDataSize(img));
 
     FILE* cipherImg=fopen("descargaCifrada.bmp","w");
     FILE* deCipherImg=fopen("descargaDecifrada.bmp","w");
+
     fwrite(cipherText,1,fileSize(img),cipherImg);
     fwrite(decipherText,1,fileSize(img),deCipherImg);
-    std::cout << (speckDecript(speckEncript(aBlock,keys),keys)).word1.value << std::endl;
-    std::cout << (speckEncript(aBlock,keys)).word1.value << std::endl;
+
     free(keys);
     free(keysSelected);
     free(cipherText);
