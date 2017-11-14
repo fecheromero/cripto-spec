@@ -135,14 +135,15 @@ int bmpDataSize(FILE* bmpFile){
     return size-54;
 }
 void loadBMPContain(uint16_t * header,uint16_t * data,FILE* bmpFile){
-    int size=bmpDataSize(bmpFile);
-    int rest=size % (CONFIG.wordSize/8);
-    fread(header,2,27,bmpFile);
-    fread(data,2,(size+rest)/2,bmpFile);
+    //int size=bmpDataSize(bmpFile);
+    // fread(header,2,27,bmpFile);
+    int size=fileSize(bmpFile);
+    fread(header,1,54,bmpFile);
+    fread(data,1,size,bmpFile);
 }
 void cipherBMPContain(uint16_t*  cipherText,uint16_t * contain,word* keys,int size){
     block auxBlock;
-    for(int j=0;j<(size/(CONFIG.wordSize/8));j=j+2){
+    for(int j=1;j<=(size/(CONFIG.wordSize/8));j=j+2){
         auxBlock.word1.value=contain[j];
         auxBlock.word2.value=contain[j+1];
         block cipherBlock;
@@ -153,7 +154,7 @@ void cipherBMPContain(uint16_t*  cipherText,uint16_t * contain,word* keys,int si
 }
 void decipherBMPContain(uint16_t*  decipherText,uint16_t * contain,word* keys,int size){
     block auxBlock;
-    for(int j=0;j<(size/(CONFIG.wordSize/8));j=j+2){
+    for(int j=1;j<=(size/(CONFIG.wordSize/8));j=j+2){
         auxBlock.word1.value=contain[j];
         auxBlock.word2.value=contain[j+1];
         block cipherBlock;
@@ -185,16 +186,14 @@ int main() {
 
     uint16_t * header=(uint16_t *)malloc(54);
     int dataSize=bmpDataSize(img);
-    uint16_t * plainText=(uint16_t*) malloc(bmpDataSize(img));
+    uint16_t * plainText=(uint16_t*) malloc(fileSize(img));
     loadBMPContain(header,plainText,img);
 
-    uint16_t * cipherText=(uint16_t*) malloc(dataSize);
+    uint16_t * cipherText=(uint16_t*) malloc(fileSize(img));
 
     memcpy(cipherText,header,54);
-    memcpy(cipherText+27,plainText,dataSize);
-
     cipherBMPContain((cipherText+27),plainText,keys,dataSize);
-    uint16_t * decipherText=(uint16_t*) malloc(dataSize);
+    uint16_t * decipherText=(uint16_t*) malloc(fileSize(img));
     memcpy(decipherText,header,54);
 
     decipherBMPContain((decipherText+27),(cipherText+27),keys,dataSize);
