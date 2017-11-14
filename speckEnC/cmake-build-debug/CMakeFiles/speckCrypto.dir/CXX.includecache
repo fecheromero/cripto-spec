@@ -6,11 +6,13 @@
 
 #IncludeRegexTransform: 
 
-/home/feche/Facu/cripto/speckEnC/main.cpp
+/home/feche/cripto-spec/speckEnC/main.cpp
 iostream
 -
 climits
 -
 cmath
+-
+cstring
 -
 
